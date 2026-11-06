@@ -119,11 +119,10 @@ def us_options(tk: str, spot: float):
     pick = set()
     for T in (TENOR, TENOR2):
         lo = [x for x in dte if x[0] <= T]; hi = [x for x in dte if x[0] >= T]
-        if lo: pick.add(lo[-1])
-        if hi: pick.add(hi[0])
+        pick.update(lo[-2:]); pick.update(hi[:2])          # two each side: a spare if one has no live quotes
     if not pick and dte:
         pick.add(dte[-1])
-    out, quoted = [], True
+    out = []
     for days, e in sorted(pick):
         try:
             ch = t.option_chain(e)
@@ -149,11 +148,17 @@ def us_options(tk: str, spot: float):
             if vs:
                 pts.append((k, sum(vs) / len(vs)))
         av = atm_from_strikes(pts, spot)
-        quoted = quoted and allq
         if av:
-            out.append((days, av))
+            out.append((days, av, allq))
         time.sleep(0.2)
-    return {"pts": out, "q": "A" if quoted else "B"} if out else None
+    if not out:
+        return None
+    good = [(d, v) for d, v, q in out if q]
+    def covers(p):
+        return all(any(d <= T for d, _ in p) and any(d >= T for d, _ in p) for T in (TENOR, TENOR2))
+    if good and (covers(good) or not covers([(d, v) for d, v, _ in out])):
+        return {"pts": good, "q": "A"}
+    return {"pts": [(d, v) for d, v, _ in out], "q": "B"}
 
 
 # ------------------------------------------------------------------ JP options (JPX)
@@ -280,22 +285,20 @@ def g_hsi30():
             d -= dt.timedelta(days=1)
     else:
         return None, None
-    und = re.search(r"(?:CLOSING|UNDERLYING)[^\n]*?([\d,]{5,}\.?\d*)", t)
-    spot = float(und.group(1).replace(",", "")) if und else None
+    h = yf.Ticker("^HSI").history(period="10d")["Close"].dropna()
+    spot = float(h.iloc[-1]) if len(h) else None
     rows = {}
     for line in t.splitlines():
-        m = re.match(r"^\s*([A-Z]{3})-?(\d{2})\s+([\d,]+)\s+([CP])\s+(.*)$", line)
-        if not m:
+        m = re.match(r"^\s*([A-Z]{3})-(\d{2})\s+([\d,]+)\s+([CP])\s", line)
+        if not m or line.count("|") < 2:
             continue
-        nums = re.findall(r"[-+]?[\d,]*\.?\d+", m.group(5))
-        ivs = [int(x) for x in nums if re.fullmatch(r"\d{1,3}", x)]
-        if not ivs:
+        day = line.split("|")[1].split()        # opening, high, low, OQP close, OQP change, IV%, volume
+        if len(day) < 6 or not day[5].isdigit() or int(day[5]) <= 0:
             continue
-        exp = dt.date(2000 + int(m.group(2)), MON[m.group(1)], 28)   # month-end proxy (HSI options expire ~2nd last bday)
-        rows.setdefault(exp, []).append((float(m.group(3).replace(",", "")), ivs[0] / 100.0))
+        exp = dt.date(2000 + int(m.group(2)), MON[m.group(1)], 27)   # ~second-last business day
+        rows.setdefault(exp, []).append((float(m.group(3).replace(",", "")), int(day[5]) / 100.0))
     if not spot or not rows:
-        log("  HSI report parse: spot", spot, "expiries", len(rows))
-        i = t.find("CONTRACT"); log(t[max(0, i - 1500):i + 3000]); return None, None
+        log("  HSI report parse: spot", spot, "expiries", len(rows)); return None, None
     pts = [((e - d).days, atm_from_strikes(r, spot)) for e, r in rows.items() if (e - d).days >= 5]
     v, _ = cm_vol([p for p in pts if p[1]], 30)
     return d.isoformat(), v
@@ -365,6 +368,9 @@ def main():
                 opt = us_options(sym, spot)
             elif m == "JP" and t in jp:
                 opt = {"pts": jp[t], "q": "B"}; asof = jd.isoformat()
+            elif m == "JP" and jraw:
+                sample = [l for l in jraw.decode("cp932", "replace").splitlines() if f"_{t}_" in l][:6]
+                log(f"  {key}: not parsed from JPX; sample rows: {sample}")
             elif m == "HK" and htext:
                 opt = hk_options(htext, hd, t)
                 if opt: asof = hd.isoformat()
@@ -405,7 +411,7 @@ def main():
     curves = build_curves_from(store["curves"], jpx_raw=jraw, jpx_date=jd)
 
     D = {"rows": rows, "gauges": gauges, "curves": curves,
-         "built": dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc).astimezone(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
+         "built": dt.datetime.now(dt.timezone.utc).astimezone(dt.timezone(dt.timedelta(hours=8))).strftime("%Y-%m-%d %H:%M"),
          "minobs": MINOBS, "tenor": TENOR}
     tpl = open("template.html", encoding="utf-8").read()
     open("index.html", "w", encoding="utf-8").write(tpl.replace("/*DATA*/", json.dumps(D, separators=(",", ":")), 1))
