@@ -1,77 +1,33 @@
-import datetime as dt, urllib.request, re, traceback
+import datetime as dt, urllib.request, re, traceback, json
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/124 Safari/537.36"}
 def get(u):
-    with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=40) as r:
+    with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60) as r:
         return r.status, r.read()
 def sec(t): print("\n=====", t, flush=True)
-D = dt.date.today()
 
-def jpx():
-    for i in range(6):
-        ds = (D - dt.timedelta(days=i)).strftime("%Y%m%d")
-        try:
-            st, b = get(f"https://www.jpx.co.jp/english/markets/derivatives/settlement-price/tvdivq00000014l6-att/rb_e{ds}.csv")
-        except Exception as e:
-            print(ds, e); continue
-        L = [l.split(",") for l in b.decode("cp932", "replace").splitlines()]
-        print(ds, st, len(L)); print(L[:3])
-        for pat in ["_225_", "_7974_", "_8001_", "_6857_", "_8058_", "_8766_", "7974", "NINTENDO"]:
-            m = [l for l in L if len(l) > 2 and (pat in l[1] or pat in ",".join(l))]
-            print(pat, len(m), m[:3])
-        pref = {}
-        for l in L:
-            if len(l) > 2:
-                k = "_".join(l[1].split("_")[:2]); pref[k] = pref.get(k, 0) + 1
-        print("prefixes", sorted(pref.items(), key=lambda x: -x[1])[:120])
-        return
+def hkex_detail():
+    st, b = get("https://www.hkex.com.hk/eng/stat/dmstat/dayrpt/dqe261105.htm")
+    t = b.decode("latin1")
+    p = t.find("SUMMARY", 3000); print(t[p - 200:p + 2500])
+    for k in ["CAT", "LEN"]:
+        a = t.find(f'NAME="{k}"');
+        if a < 0: a = t.find(f'name="{k}"')
+        print("\n---", k, a); print(t[a:a + 9000])
 
-def jpx_opt_page():
-    st, b = get("https://www.jpx.co.jp/english/markets/derivatives/option-price/index.html")
-    print(st, re.findall(r'href="([^"]+)"', b.decode("utf8", "replace"))[:200])
-
-def hkex():
-    for i in range(7):
-        ds = (D - dt.timedelta(days=i)).strftime("%y%m%d")
-        u = f"https://www.hkex.com.hk/eng/stat/dmstat/dayrpt/dqe{ds}.htm"
-        try:
-            st, b = get(u)
-        except Exception as e:
-            print(u, e); continue
-        t = b.decode("utf8", "replace"); print(u, st, len(t)); print(t[:2500])
-        for k in ["CATL", "CTL", "CONTEMPORARY", "LENOVO", "LEN ", "SANHUA", "INNOLIGHT", "CAMBRIDGE"]:
-            p = t.upper().find(k); print("--", k, p)
-            if p >= 0: print(t[max(0, p - 300):p + 3000])
-        return
-
-def nikkei_vi():
-    for u in ["https://indexes.nikkei.co.jp/en/nkave/index/profile?idx=nk225vi",
-              "https://indexes.nikkei.co.jp/en/nkave/get_real_data?idx=nk225vi",
-              "https://indexes.nikkei.co.jp/en/nkave/archives/data?list=vi"]:
+def vhsi():
+    for u in ["https://www.hsi.com.hk/data/eng/rt/index-series/vhsi/performance.do",
+              "https://www.hsi.com.hk/data/eng/rt/index-series/hsi-volatility/performance.do",
+              "https://www.hsi.com.hk/eng/indexes/all-indexes/vhsi",
+              "https://www.hsi.com.hk/data/eng/indexes/indexes-list.do",
+              "https://query1.finance.yahoo.com/v1/finance/search?q=VHSI",
+              "https://www.hkex.com.hk/eng/stat/dmstat/dayrpt/hsio261105.htm",
+              "https://www.hkex.com.hk/eng/stat/dmstat/dayrpt/vhsif261105.htm"]:
         try:
             st, b = get(u); t = b.decode("utf8", "replace"); print(u, st, len(t))
-            for m in re.finditer(r"(?i)(current|value|price)[^<]{0,200}", t):
-                print(m.group(0)[:200]); break
-            print(t[:800])
+            i = t.upper().find("VHSI"); print(t[:600] if i < 0 else t[max(0, i - 300):i + 1200])
         except Exception as e: print(u, e)
 
-def yf_bits():
-    import yfinance as yf
-    for s in ["^VIX", "^VIX9D", "^VIX3M", "^VIX6M", "^VIX1Y", "^VHSI", "^JNIV", "^N225", "7974.T", "0992.HK", "3750.HK"]:
-        try:
-            h = yf.Ticker(s).history(period="5d"); print(s, len(h), h["Close"].tail(2).to_dict())
-        except Exception as e: print(s, e)
-    t = yf.Ticker("AAPL"); ex = t.options; print("AAPL expiries", ex[:12])
-    c = t.option_chain(ex[min(4, len(ex) - 1)]); print(c.calls.columns.tolist()); print(c.calls.iloc[len(c.calls)//2-2:len(c.calls)//2+2].to_string())
-    try: print("cal", t.calendar)
-    except Exception as e: print("cal", e)
-    try: print("ed", t.get_earnings_dates(limit=4))
-    except Exception as e: print("ed", e)
-    for s in ["7974.T", "0992.HK"]:
-        try: print(s, "options", yf.Ticker(s).options[:5])
-        except Exception as e: print(s, e)
-
-for name, f in [("JPX rb_e", jpx), ("JPX option-price page", jpx_opt_page), ("HKEX dqe", hkex),
-                ("Nikkei VI", nikkei_vi), ("yfinance", yf_bits)]:
+for name, f in [("HKEX detail", hkex_detail), ("VHSI", vhsi)]:
     sec(name)
     try: f()
     except Exception: traceback.print_exc()
