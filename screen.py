@@ -85,7 +85,9 @@ def atm_from_strikes(pts, spot):
     pts = sorted(p for p in pts if p[1])
     lo = [p for p in pts if p[0] <= spot]; hi = [p for p in pts if p[0] >= spot]
     if not lo or not hi:
-        return None
+        # spot just outside the listed strikes (e.g. after a gap): take the edge strike if within 5%
+        edge = (hi[0] if hi else lo[-1]) if pts else None
+        return edge[1] if edge and abs(edge[0] / spot - 1) <= 0.05 else None
     (k1, v1), (k2, v2) = lo[-1], hi[0]
     return v1 if k2 == k1 else v1 + (v2 - v1) * (spot - k1) / (k2 - k1)
 
