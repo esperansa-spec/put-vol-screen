@@ -303,7 +303,11 @@ def g_hsi30():
 
 # ------------------------------------------------------------------ prices / RV / earnings
 def yf_sym(m, t):
-    return {"US": t, "JP": f"{t}.T", "HK": f"{int(t):04d}.HK"}[m]
+    if m == "JP":
+        return f"{t}.T"
+    if m == "HK":
+        return f"{int(t):04d}.HK"
+    return t
 
 
 def rv_block(close: pd.Series):
