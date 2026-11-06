@@ -1,0 +1,137 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Put Vol Screen</title>
+<style>
+:root{--bg:#f4f4f2;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--ink3:#8a8984;--rule:#e4e3df;
+--s1:#2a78d6;--s2:#eb6834;--h1:#cde2fb;--h2:#9ec5f4;--h3:#6da7ec;--h4:#3987e5;--h5:#1c5cab;
+--good:#0ca30c;--warn:#fab219;--crit:#d03b3b;--sel:#eef4fc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121211;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--ink3:#8d8c85;--rule:#2e2e2c;--s1:#3987e5;--s2:#d95926;--h1:#104281;--h2:#184f95;--h3:#1c5cab;--h4:#256abf;--h5:#3987e5;--sel:#1f2a38}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:20px;margin:0 0 2px}.sub{color:var(--ink2);margin:0 0 16px}
+.gauges{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.g{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 14px;min-width:150px}
+.g .l{color:var(--ink2);font-size:12px}.g .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}.g .p{color:var(--ink2);font-size:12px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.seg button{border:1px solid var(--rule);background:var(--surface);color:var(--ink);padding:6px 12px;cursor:pointer;font:inherit}
+.seg button:first-child{border-radius:6px 0 0 6px}.seg button:last-child{border-radius:0 6px 6px 0}
+.seg button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+label{color:var(--ink2)}select,input{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:5px 6px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;overflow:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--surface);text-align:right;font-weight:600;color:var(--ink2);padding:8px 10px;border-bottom:1px solid var(--rule);cursor:pointer;white-space:nowrap;user-select:none}
+th.l,td.l{text-align:left}td{text-align:right;padding:7px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+tr:hover td{background:var(--sel)}tr.sel td{background:var(--sel)}
+.pc{border-radius:4px;padding:2px 6px;display:inline-block;min-width:38px}
+.mut{color:var(--ink3)}.q{font-size:11px;padding:1px 6px;border-radius:10px;border:1px solid var(--rule)}
+.tag{font-size:11px;color:var(--ink2)}
+#detail{margin-top:14px;padding:14px}#detail h2{font-size:15px;margin:0 0 4px}
+.leg{display:flex;gap:14px;color:var(--ink2);font-size:12px;margin:4px 0 6px}.sw{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:5px}
+#tip{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;font-size:12px;box-shadow:0 2px 8px #0002;display:none}
+.curves{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-bottom:14px}
+.cv{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 14px}
+.cv h3{font-size:13px;margin:0;font-weight:600}.cv .m{color:var(--ink2);font-size:12px;margin:2px 0 4px}
+.cv .m b{color:var(--ink);font-weight:600}
+.note{color:var(--ink2);font-size:12px;margin-top:12px;line-height:1.5}
+</style></head><body><div class="wrap">
+<h1>Put vol screen</h1><p class="sub" id="sub"></p>
+<div class="gauges" id="gauges"></div>
+<div class="curves" id="curves"></div>
+
+<div class="bar"><div class="seg" id="mk"></div>
+<label>Min IV pctile <input id="minp" type="number" min="0" max="100" step="10" value="0" style="width:64px"></label>
+<label><input type="checkbox" id="hideRV"> Hide names without listed options</label></div>
+<div class="card"><table><thead><tr id="hd"></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="card" id="detail"><p class="mut">Click a row to see its IV and realized-vol history.</p></div>
+<p class="note">IV = 90-day constant-maturity ATM implied vol (total-variance interpolation between listed expiries). IV pctile ranks today against this name's own stored history (shown once ≥<span id="mo"></span> days exist; until then the count is shown). RV pctile ranks 20-day realized vol against 2 years of prices, a stand-in while IV history builds. Quality: A = market-traded / quoted ATM options; B = model or exchange-settlement vol, or Yahoo IV without live quotes; C = unchanged for several days (stale); RV = no listed options, realized vol only. E = earnings within the 90-day tenor. HSI 30d ATM = Hang Seng index options at-the-money vol from the HKEX daily report, a stand-in for VHSI (no free VHSI feed). Japan single-stock vols are exchange settlement vols (JPX). Indicative only; get a tradeable quote. Vol curves: US = CBOE VIX9D/VIX/VIX3M/VIX6M/VIX1Y; Japan = Nikkei 225 index-option ATM vol from JPX settlement per listed expiry, resampled to 1M/2M/3M/6M/1Y by total variance; x-axis is square-root of days.</p>
+</div><div id="tip"></div>
+<script>
+const D=/*DATA*/;const $=s=>document.querySelector(s);
+const pct=v=>v==null?'–':(v*100).toFixed(1);
+$('#sub').textContent=`Built ${D.built} · ${D.rows.length} names · ${D.tenor}d ATM implied vol`;$('#mo').textContent=D.minobs;
+$('#gauges').innerHTML=D.gauges.map(g=>`<div class="g"><div class="l">${g.name}${/ATM/.test(g.name)?'':' (30d index)'}</div><div class="v">${g.v==null?'–':(g.v*100).toFixed(1)}</div><div class="p">${g.pct==null?g.n+(g.n==1?' day':' days')+' stored':Math.round(g.pct)+'th pctile'} · ${g.asof}</div></div>`).join('');
+const MK=['All','US','JP','HK'];let mk='All',sortK='iv',sortD=-1,selT=null;
+$('#mk').innerHTML=MK.map(m=>`<button data-m="${m}" class="${m==mk?'on':''}">${m}</button>`).join('');
+$('#mk').onclick=e=>{if(!e.target.dataset.m)return;mk=e.target.dataset.m;[...$('#mk').children].forEach(b=>b.classList.toggle('on',b.dataset.m==mk));render()};
+$('#minp').oninput=render;$('#hideRV').onchange=render;
+const COLS=[['m','Mkt',1],['t','Ticker',1],['n','Name',1],['iv','IV 90d'],['ivp','IV pctile'],['iv180','IV 180d'],['rv20','RV 20d'],['ivrv','IV / RV'],['rvp','RV pctile'],['q','Quality'],['asof','As of']];
+$('#hd').innerHTML=COLS.map(([k,l,left])=>`<th data-k="${k}" class="${left?'l':''}">${l}</th>`).join('');
+$('#hd').onclick=e=>{const k=e.target.dataset.k;if(!k)return;sortD=(sortK==k)?-sortD:-1;sortK=k;render()};
+function heat(p){if(p==null)return'';const s=p<50?'':p<70?'--h1':p<85?'--h2':p<95?'--h3':'--h4';return s?`background:var(${s})`:''}
+function pc(p,n){if(p==null)return n!=null?`<span class="mut">${n}d</span>`:'<span class="mut">–</span>';return`<span class="pc" style="${heat(p)}">${Math.round(p)}</span>`}
+function render(){const mp=+$('#minp').value||0,hide=$('#hideRV').checked;
+ let rows=D.rows.filter(r=>(mk=='All'||r.m==mk)&&(!hide||r.q!='RV')&&(mp==0||(r.ivp!=null&&r.ivp>=mp)));
+ rows.sort((a,b)=>{const x=a[sortK],y=b[sortK];if(x==null)return 1;if(y==null)return-1;return(x>y?1:x<y?-1:0)*sortD});
+ $('#tb').innerHTML=rows.map(r=>`<tr data-t="${r.m}|${r.t}" class="${selT==r.m+'|'+r.t?'sel':''}"><td class="l">${r.m}</td><td class="l"><b>${r.t}</b></td><td class="l">${r.n||''}${r.earn!=null&&r.earn>=0&&r.earn<=D.tenor?' <span class="tag" title="Earnings in '+r.earn+'d">E</span>':''}</td>
+ <td>${r.iv==null?'<span class="mut">–</span>':pct(r.iv)+(r.how&&r.how.startsWith('extrap')?'<span class="tag" title="'+r.how+'">*</span>':'')}</td><td>${r.iv==null?'<span class="mut">–</span>':pc(r.ivp,r.ivn)}</td>
+ <td>${pct(r.iv180)}</td><td>${pct(r.rv20)}</td><td>${r.ivrv==null?'–':r.ivrv.toFixed(2)}</td><td>${pc(r.rvp)}</td><td><span class="q">${r.q}</span></td><td class="mut">${r.asof}</td></tr>`).join('');
+ [...$('#hd').children].forEach(th=>th.textContent=COLS.find(c=>c[0]==th.dataset.k)[1]+(th.dataset.k==sortK?(sortD<0?' ↓':' ↑'):''));}
+$('#tb').onclick=e=>{const tr=e.target.closest('tr');if(!tr)return;selT=tr.dataset.t;render();detail(D.rows.find(r=>r.m+'|'+r.t==selT))};
+function detail(r){if(!r)return;const h=r.hist||{d:[],rv:[],ivd:[],iv:[]};
+ const host=$('#detail');const W=Math.max(280,Math.min(1100,(host.clientWidth||window.innerWidth||360)-28)),H=240,P={l:36,r:56,t:10,b:24};
+ /* hex colors: iOS Safari often ignores CSS vars in SVG presentation attributes */
+ const C={rule:'#e4e3df',ink3:'#8a8984',ink2:'#52514e',ink:'#0b0b0b',s1:'#2a78d6',s2:'#eb6834',surface:'#fcfcfb'};
+ const ivMap=Object.fromEntries((h.ivd||[]).map((d,i)=>[d,h.iv[i]]));const dates=[...new Set([...(h.d||[]),...(h.ivd||[])])].sort();
+ if(!dates.length){host.innerHTML=`<h2>${r.t} ${r.n||''}</h2><p class="mut">No history yet.</p>`;host.scrollIntoView({behavior:'smooth',block:'nearest'});return}
+ const rvMap=Object.fromEntries((h.d||[]).map((d,i)=>[d,h.rv[i]]));const all=[...(h.rv||[]),...(h.iv||[])].filter(v=>v!=null);
+ if(!all.length){host.innerHTML=`<h2>${r.t} ${r.n||''}</h2><p class="mut">No history yet.</p>`;return}
+ const ymax=Math.max(...all)*1.1,ymin=0;
+ const x=i=>P.l+(dates.length<2?0:i*(W-P.l-P.r)/(dates.length-1)),y=v=>P.t+(H-P.t-P.b)*(1-(v-ymin)/(ymax-ymin||1));
+ const path=m=>{let s='',pen=false;dates.forEach((d,i)=>{const v=m[d];if(v==null){pen=false;return}s+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1);pen=true});return s};
+ const ticks=[0,.25,.5,.75,1].map(f=>ymin+f*(ymax-ymin));const lastIdx=(m)=>{for(let i=dates.length-1;i>=0;i--)if(m[dates[i]]!=null)return i;return-1};
+ const li=lastIdx(ivMap),lr=lastIdx(rvMap);
+ let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="IV and realized vol history">${ticks.map(t=>`<line x1="${P.l}" x2="${W-P.r}" y1="${y(t)}" y2="${y(t)}" stroke="${C.rule}"/><text x="${P.l-6}" y="${y(t)+4}" text-anchor="end" fill="${C.ink3}" font-size="11">${(t*100).toFixed(0)}</text>`).join('')}
+ <text x="${P.l}" y="${H-6}" fill="${C.ink3}" font-size="11">${dates[0]}</text><text x="${W-P.r}" y="${H-6}" text-anchor="end" fill="${C.ink3}" font-size="11">${dates[dates.length-1]}</text>
+ <path d="${path(rvMap)}" fill="none" stroke="${C.s2}" stroke-width="2"/><path d="${path(ivMap)}" fill="none" stroke="${C.s1}" stroke-width="2"/>
+ ${li>=0?`<circle cx="${x(li)}" cy="${y(ivMap[dates[li]])}" r="4" fill="${C.s1}" stroke="${C.surface}" stroke-width="2"/><text x="${x(li)+8}" y="${y(ivMap[dates[li]])+4}" fill="${C.ink}" font-size="11">IV ${(ivMap[dates[li]]*100).toFixed(1)}</text>`:''}
+ ${lr>=0?`<text x="${x(lr)+8}" y="${y(rvMap[dates[lr]])+16}" fill="${C.ink2}" font-size="11">RV ${(rvMap[dates[lr]]*100).toFixed(1)}</text>`:''}
+ <line id="xh" y1="${P.t}" y2="${H-P.b}" stroke="${C.ink3}" stroke-dasharray="3 3" style="display:none"/><rect id="hit" x="${P.l}" y="0" width="${Math.max(0,W-P.l-P.r)}" height="${H}" fill="transparent"/></svg>`;
+ host.innerHTML=`<h2>${r.t} · ${r.n||''}</h2><div class="leg"><span><span class="sw" style="background:${C.s1}"></span>IV 90d (stored daily)</span><span><span class="sw" style="background:${C.s2}"></span>Realized vol 20d</span></div>${svg}`;
+ host.scrollIntoView({behavior:'smooth',block:'nearest'});
+ const tip=$('#tip'),xh=$('#xh'),hit=$('#hit');
+ const move=e=>{const pt=(e.touches&&e.touches[0])||e;const b=hit.getBoundingClientRect();const i=Math.max(0,Math.min(dates.length-1,Math.round((pt.clientX-b.left)/(b.width||1)*(dates.length-1))));const d=dates[i];
+  xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.style.display='';tip.style.display='block';tip.style.left=(pt.clientX+12)+'px';tip.style.top=(pt.clientY-10)+'px';
+  tip.innerHTML=`<b>${d}</b><br>IV 90d: ${ivMap[d]==null?'–':(ivMap[d]*100).toFixed(1)}<br>RV 20d: ${rvMap[d]==null?'–':(rvMap[d]*100).toFixed(1)}`};
+ hit.onmousemove=move;hit.ontouchmove=e=>{e.preventDefault();move(e)};
+ hit.onmouseleave=()=>{tip.style.display='none';xh.style.display='none'};
+ hit.ontouchend=()=>{tip.style.display='none';xh.style.display='none'};}
+render();
+
+/* ---- vol curves (US / JP index term structure) ---- */
+function curves(){const host=$('#curves');const cs=D.curves||{};const ks=['US','JP'].filter(k=>cs[k]&&cs[k].pts&&cs[k].pts.length);
+ if(!ks.length){host.style.display='none';return}
+ const C={rule:'#e4e3df',ink3:'#8a8984',ink2:'#52514e',ink:'#0b0b0b',s1:'#2a78d6',s2:'#eb6834',surface:'#fcfcfb'};
+ const TK=[[9,'9d'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']];
+ const at=(pts,t)=>{const p=pts.find(q=>q.t==t);return p?p.v:null};
+ const near=(pts,t)=>pts.reduce((a,b)=>Math.abs(b.t-t)<Math.abs(a.t-t)?b:a);
+ host.innerHTML=ks.map(k=>`<div class="cv" id="cv${k}"></div>`).join('');
+ ks.forEach(k=>{const c=cs[k],el=$('#cv'+k);
+  const W=Math.max(280,(el.clientWidth||360)-28),H=170,P={l:30,r:12,t:10,b:22};
+  const series=[['m1',c.m1,C.ink3,'2 3',1],['w1',c.w1,C.s2,'4 3',1.5],['now',{asof:c.asof,pts:c.pts},C.s1,'',2]].filter(s=>s[1]&&s[1].pts&&s[1].pts.length);
+  const all=series.flatMap(s=>s[1].pts.map(p=>p.v)).concat((c.raw||[]).map(p=>p.v));
+  const tmin=Math.min(...c.pts.map(p=>p.t),30),tmax=Math.max(...c.pts.map(p=>p.t),180);
+  let lo=Math.min(...all),hi=Math.max(...all);const pad=Math.max(.01,(hi-lo)*.15);lo=Math.max(0,lo-pad);hi=hi+pad;
+  const sx=t=>Math.sqrt(t),x=t=>P.l+(sx(t)-sx(tmin))/(sx(tmax)-sx(tmin)||1)*(W-P.l-P.r),y=v=>P.t+(H-P.t-P.b)*(1-(v-lo)/(hi-lo||1));
+  const ln=pts=>pts.map((p,i)=>(i?'L':'M')+x(p.t).toFixed(1)+' '+y(p.v).toFixed(1)).join('');
+  const yt=[0,.5,1].map(f=>lo+f*(hi-lo));
+  /* slope readout: 3M minus 1M (VIX3M-VIX for US). Positive = upward sloping (normal); negative = inverted, near-term stress */
+  const v1=at(c.pts,30),v3=at(c.pts,93)??at(c.pts,90),sl=(v1!=null&&v3!=null)?(v3-v1)*100:null;
+  const slTxt=sl==null?'':` · 3M−1M <b style="color:${sl<0?'var(--crit)':'var(--ink)'}">${sl>0?'+':''}${sl.toFixed(1)}</b> ${sl<0?'inverted':'upward'}`;
+  const chg=s=>{if(!s)return'';const p=near(s.pts,30),q=at(c.pts,p.t);return q==null?'':` · 1M vs ${s===c.w1?'1w':'1m'} ago ${(q-p.v)*100>0?'+':''}${((q-p.v)*100).toFixed(1)}`};
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="${k} implied vol term structure">`+
+   yt.map(t=>`<line x1="${P.l}" x2="${W-P.r}" y1="${y(t)}" y2="${y(t)}" stroke="${C.rule}"/><text x="${P.l-5}" y="${y(t)+4}" text-anchor="end" fill="${C.ink3}" font-size="11">${(t*100).toFixed(0)}</text>`).join('')+
+   TK.filter(([t])=>t>=tmin&&t<=tmax).map(([t,l])=>`<text x="${x(t)}" y="${H-6}" text-anchor="middle" fill="${C.ink3}" font-size="11">${l}</text>`).join('')+
+   series.map(([id,s,col,da,w])=>`<path d="${ln(s.pts)}" fill="none" stroke="${col}" stroke-width="${w}" ${da?`stroke-dasharray="${da}"`:''}/>`).join('')+
+   (c.raw||[]).filter(p=>p.t>=tmin&&p.t<=tmax).map(p=>`<circle cx="${x(p.t)}" cy="${y(p.v)}" r="2.5" fill="none" stroke="${C.s1}"/>`).join('')+
+   c.pts.map(p=>`<circle cx="${x(p.t)}" cy="${y(p.v)}" r="3" fill="${C.s1}" stroke="${C.surface}" stroke-width="1.5"/>`).join('')+
+   `<line class="xh" y1="${P.t}" y2="${H-P.b}" stroke="${C.ink3}" stroke-dasharray="3 3" style="display:none"/><rect class="hit" x="${P.l}" y="0" width="${W-P.l-P.r}" height="${H}" fill="transparent"/></svg>`;
+  const leg=series.map(([id,s,col,da])=>`<span><span class="sw" style="background:${col}${da?';opacity:.7':''}"></span>${id=='now'?'Today':id=='w1'?'~1w ago':'~1m ago'} <span class="mut">${s.asof}</span></span>`).join('')+(c.raw&&c.raw.length?'<span class="mut">○ listed expiries</span>':'');
+  el.innerHTML=`<h3>${k=='US'?'US':'Japan'} · ${c.name}${c.stale?' <span class="q">stale</span>':''}</h3><div class="m">1M <b>${v1==null?'–':(v1*100).toFixed(1)}</b>${slTxt}${chg(c.w1)}</div><div class="leg">${leg}</div>${svg}`;
+  const tip=$('#tip'),xh=el.querySelector('.xh'),hit=el.querySelector('.hit');
+  const move=e=>{const pt=(e.touches&&e.touches[0])||e,b=hit.getBoundingClientRect();
+   const tx=sx(tmin)+(pt.clientX-b.left)/(b.width||1)*(sx(tmax)-sx(tmin)),p=near(c.pts,tx*tx);
+   xh.setAttribute('x1',x(p.t));xh.setAttribute('x2',x(p.t));xh.style.display='';tip.style.display='block';tip.style.left=(pt.clientX+12)+'px';tip.style.top=(pt.clientY-10)+'px';
+   tip.innerHTML=`<b>${p.t}d${p.src?' · '+p.src:''}${p.x?' (flat-extrap.)':''}</b><br>Today ${(p.v*100).toFixed(1)}`+[[c.w1,'1w ago'],[c.m1,'1m ago']].filter(s=>s[0]).map(([s,l])=>{const q=at(s.pts,p.t);return q==null?'':`<br>${l} ${(q*100).toFixed(1)}`}).join('')};
+  const off=()=>{tip.style.display='none';xh.style.display='none'};
+  hit.onmousemove=move;hit.ontouchmove=e=>{e.preventDefault();move(e)};hit.onmouseleave=off;hit.ontouchend=off;});}
+curves();let _cvT;window.addEventListener('resize',()=>{clearTimeout(_cvT);_cvT=setTimeout(curves,150)});
+</script></body></html>
