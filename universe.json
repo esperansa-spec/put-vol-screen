@@ -1,0 +1,402 @@
+[
+{
+"m": "HK",
+"t": "2050",
+"n": "Sanhua Intelligent"
+},
+{
+"m": "HK",
+"t": "3308",
+"n": "Zhongji Innolight"
+},
+{
+"m": "HK",
+"t": "3750",
+"n": "CATL"
+},
+{
+"m": "HK",
+"t": "6166",
+"n": "Cambridge Tech (CIG)"
+},
+{
+"m": "HK",
+"t": "992",
+"n": "Lenovo"
+},
+{
+"m": "JP",
+"t": "6146",
+"n": "Disco"
+},
+{
+"m": "JP",
+"t": "6501",
+"n": "Hitachi"
+},
+{
+"m": "JP",
+"t": "6857",
+"n": "Advantest"
+},
+{
+"m": "JP",
+"t": "6920",
+"n": "Lasertec"
+},
+{
+"m": "JP",
+"t": "7011",
+"n": "Mitsubishi Heavy"
+},
+{
+"m": "JP",
+"t": "7012",
+"n": "Kawasaki Heavy"
+},
+{
+"m": "JP",
+"t": "7013",
+"n": "IHI"
+},
+{
+"m": "JP",
+"t": "7974",
+"n": "Nintendo"
+},
+{
+"m": "JP",
+"t": "8001",
+"n": "Itochu"
+},
+{
+"m": "JP",
+"t": "8002",
+"n": "Marubeni"
+},
+{
+"m": "JP",
+"t": "8031",
+"n": "Mitsui & Co"
+},
+{
+"m": "JP",
+"t": "8035",
+"n": "Tokyo Electron"
+},
+{
+"m": "JP",
+"t": "8053",
+"n": "Sumitomo Corp"
+},
+{
+"m": "JP",
+"t": "8058",
+"n": "Mitsubishi Corp"
+},
+{
+"m": "JP",
+"t": "8750",
+"n": "Dai-ichi Life"
+},
+{
+"m": "JP",
+"t": "8766",
+"n": "Tokio Marine"
+},
+{
+"m": "US",
+"t": "AAPL",
+"n": "AAPL"
+},
+{
+"m": "US",
+"t": "ADBE",
+"n": "ADBE"
+},
+{
+"m": "US",
+"t": "ADI",
+"n": "ADI"
+},
+{
+"m": "US",
+"t": "ADP",
+"n": "ADP"
+},
+{
+"m": "US",
+"t": "ALAB",
+"n": "ALAB"
+},
+{
+"m": "US",
+"t": "AMAT",
+"n": "AMAT"
+},
+{
+"m": "US",
+"t": "AMD",
+"n": "AMD"
+},
+{
+"m": "US",
+"t": "AMGN",
+"n": "AMGN"
+},
+{
+"m": "US",
+"t": "AMZN",
+"n": "AMZN"
+},
+{
+"m": "US",
+"t": "ANET",
+"n": "ANET"
+},
+{
+"m": "US",
+"t": "APP",
+"n": "APP"
+},
+{
+"m": "US",
+"t": "ARM",
+"n": "ARM"
+},
+{
+"m": "US",
+"t": "ASML",
+"n": "ASML"
+},
+{
+"m": "US",
+"t": "AVGO",
+"n": "AVGO"
+},
+{
+"m": "US",
+"t": "AZN",
+"n": "AZN"
+},
+{
+"m": "US",
+"t": "BKNG",
+"n": "BKNG"
+},
+{
+"m": "US",
+"t": "CBRS",
+"n": "CBRS"
+},
+{
+"m": "US",
+"t": "CDNS",
+"n": "CDNS"
+},
+{
+"m": "US",
+"t": "CEG",
+"n": "CEG"
+},
+{
+"m": "US",
+"t": "CMCSA",
+"n": "CMCSA"
+},
+{
+"m": "US",
+"t": "COST",
+"n": "COST"
+},
+{
+"m": "US",
+"t": "CRDO",
+"n": "CRDO"
+},
+{
+"m": "US",
+"t": "CRWD",
+"n": "CRWD"
+},
+{
+"m": "US",
+"t": "CSCO",
+"n": "CSCO"
+},
+{
+"m": "US",
+"t": "DASH",
+"n": "DASH"
+},
+{
+"m": "US",
+"t": "GILD",
+"n": "GILD"
+},
+{
+"m": "US",
+"t": "GOOGL",
+"n": "GOOGL"
+},
+{
+"m": "US",
+"t": "HON",
+"n": "HON"
+},
+{
+"m": "US",
+"t": "INTC",
+"n": "INTC"
+},
+{
+"m": "US",
+"t": "INTU",
+"n": "INTU"
+},
+{
+"m": "US",
+"t": "IREN",
+"n": "IREN"
+},
+{
+"m": "US",
+"t": "ISRG",
+"n": "ISRG"
+},
+{
+"m": "US",
+"t": "KLAC",
+"n": "KLAC"
+},
+{
+"m": "US",
+"t": "LIN",
+"n": "LIN"
+},
+{
+"m": "US",
+"t": "LLY",
+"n": "LLY"
+},
+{
+"m": "US",
+"t": "LRCX",
+"n": "LRCX"
+},
+{
+"m": "US",
+"t": "MAR",
+"n": "MAR"
+},
+{
+"m": "US",
+"t": "MELI",
+"n": "MELI"
+},
+{
+"m": "US",
+"t": "META",
+"n": "META"
+},
+{
+"m": "US",
+"t": "MSFT",
+"n": "MSFT"
+},
+{
+"m": "US",
+"t": "MU",
+"n": "MU"
+},
+{
+"m": "US",
+"t": "NFLX",
+"n": "NFLX"
+},
+{
+"m": "US",
+"t": "NVDA",
+"n": "NVDA"
+},
+{
+"m": "US",
+"t": "ORCL",
+"n": "ORCL"
+},
+{
+"m": "US",
+"t": "ORLY",
+"n": "ORLY"
+},
+{
+"m": "US",
+"t": "PANW",
+"n": "PANW"
+},
+{
+"m": "US",
+"t": "PDD",
+"n": "PDD"
+},
+{
+"m": "US",
+"t": "PEP",
+"n": "PEP"
+},
+{
+"m": "US",
+"t": "PLTR",
+"n": "PLTR"
+},
+{
+"m": "US",
+"t": "QCOM",
+"n": "QCOM"
+},
+{
+"m": "US",
+"t": "SBUX",
+"n": "SBUX"
+},
+{
+"m": "US",
+"t": "SHOP",
+"n": "SHOP"
+},
+{
+"m": "US",
+"t": "SNPS",
+"n": "SNPS"
+},
+{
+"m": "US",
+"t": "TMUS",
+"n": "TMUS"
+},
+{
+"m": "US",
+"t": "TSLA",
+"n": "TSLA"
+},
+{
+"m": "US",
+"t": "TSM",
+"n": "TSM"
+},
+{
+"m": "US",
+"t": "TXN",
+"n": "TXN"
+},
+{
+"m": "US",
+"t": "VRT",
+"n": "VRT"
+},
+{
+"m": "US",
+"t": "VRTX",
+"n": "VRTX"
+}
+]
